@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "welcomekoost-app"
+        CONTAINER_NAME = "welcomekoost-container"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/kookatlas/pfi-tcscc-welcomekoost.git'
+            }
+        }
+
+        stage('Build Spring Boot App') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t $IMAGE_NAME .'
+            }
+        }
+
+        stage('Stop & Remove Old Container') {
+            steps {
+                script {
+                    sh 'docker stop $CONTAINER_NAME || true'
+                    sh 'docker rm $CONTAINER_NAME || true'
+                }
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                sh 'docker run -d --name $CONTAINER_NAME -p 9000:9000 $IMAGE_NAME'
+            }
+        }
+    }
+}
